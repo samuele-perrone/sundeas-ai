@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import SyncButton from "@/app/components/SyncButton";
+import DisconnectButton from "@/app/components/DisconnectButton";
 
 export const metadata = { title: "Portfolio — Sundeas AI" };
 
@@ -60,7 +61,10 @@ export default async function PortfolioPage() {
             <p className="mt-1 text-xs text-[var(--muted)]">Last synced {lastSync}</p>
           )}
         </div>
-        <SyncButton portfolioId={portfolio.id} />
+        <div className="flex items-center gap-3">
+          <DisconnectButton portfolioId={portfolio.id} />
+          <SyncButton portfolioId={portfolio.id} />
+        </div>
       </div>
 
       {/* Summary cards */}
