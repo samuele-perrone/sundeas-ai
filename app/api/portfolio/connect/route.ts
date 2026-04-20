@@ -8,21 +8,25 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
-  const { apiKey, name } = await request.json();
+  const { apiKey, apiSecret, name } = await request.json();
   if (!apiKey?.trim()) {
     return NextResponse.json({ error: "API key is required" }, { status: 400 });
   }
 
-  // Validate the key against T212
+  const key = apiKey.trim();
+  const secret = apiSecret?.trim() || undefined;
+
+  // Validate against T212 — pass through the real error so we can debug
   try {
-    await validateKey(apiKey.trim());
-  } catch {
-    return NextResponse.json({ error: "Invalid API key — check it is a read-only key from Trading 212" }, { status: 400 });
+    await validateKey(key, secret);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error"
+    console.error("T212 validation failed:", msg)
+    return NextResponse.json({ error: `Could not connect to Trading 212: ${msg}` }, { status: 400 });
   }
 
   const admin = createAdminClient();
 
-  // Upsert portfolio (one T212 portfolio per user for now)
   const { data: portfolio, error: portfolioError } = await admin
     .from("portfolios")
     .upsert(
@@ -30,7 +34,8 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         name: name || "My Trading 212 Portfolio",
         source: "trading212",
-        t212_api_key: apiKey.trim(),
+        t212_api_key: key,
+        t212_api_secret: secret ?? null,
       },
       { onConflict: "user_id,source" }
     )
@@ -42,14 +47,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Failed to save portfolio" }, { status: 500 });
   }
 
-  // Sync initial holdings
   try {
     const [positions, cash] = await Promise.all([
-      getPortfolio(apiKey.trim()),
-      getCash(apiKey.trim()),
+      getPortfolio(key, secret),
+      getCash(key, secret),
     ]);
-
-    const totalValue = cash.invested + cash.free;
 
     const holdingsToUpsert = positions.map((pos) => ({
       portfolio_id: portfolio.id,
@@ -67,10 +69,9 @@ export async function POST(request: NextRequest) {
         .upsert(holdingsToUpsert, { onConflict: "portfolio_id,ticker" });
     }
 
-    return NextResponse.json({ ok: true, portfolioId: portfolio.id, totalValue, count: positions.length });
+    return NextResponse.json({ ok: true, portfolioId: portfolio.id, totalValue: cash.invested + cash.free, count: positions.length });
   } catch (err) {
     console.error("T212 sync error:", err);
-    // Portfolio is saved — sync can be retried, not a fatal error
     return NextResponse.json({ ok: true, portfolioId: portfolio.id, syncError: true });
   }
 }

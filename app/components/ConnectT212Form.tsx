@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function ConnectT212Form() {
   const router = useRouter();
   const [apiKey, setApiKey] = useState("");
+  const [apiSecret, setApiSecret] = useState("");
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -17,7 +18,7 @@ export default function ConnectT212Form() {
     const res = await fetch("/api/portfolio/connect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ apiKey }),
+      body: JSON.stringify({ apiKey, apiSecret: apiSecret || undefined }),
     });
 
     const data = await res.json();
@@ -97,6 +98,21 @@ export default function ConnectT212Form() {
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="Paste your Trading 212 API key"
             required
+            disabled={state === "loading"}
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 font-mono text-sm text-[var(--foreground)] outline-none placeholder:font-sans placeholder:text-[var(--muted)] focus:border-[var(--accent)] disabled:opacity-50"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-[var(--foreground)]">
+            API secret{" "}
+            <span className="font-normal text-[var(--muted)]">(if shown by Trading 212)</span>
+          </label>
+          <input
+            type="text"
+            value={apiSecret}
+            onChange={(e) => setApiSecret(e.target.value)}
+            placeholder="Paste your Trading 212 API secret"
             disabled={state === "loading"}
             className="rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 font-mono text-sm text-[var(--foreground)] outline-none placeholder:font-sans placeholder:text-[var(--muted)] focus:border-[var(--accent)] disabled:opacity-50"
           />

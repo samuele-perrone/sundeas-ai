@@ -83,6 +83,7 @@ create table if not exists portfolios (
   name text not null,
   source text not null check (source in ('trading212', 'manual')),
   t212_api_key text,               -- stored server-side only, never sent to client
+  t212_api_secret text,            -- optional Basic Auth secret (some T212 key types)
   created_at timestamptz not null default now(),
   unique (user_id, source)
 );

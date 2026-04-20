@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   const { data: portfolios } = await admin
     .from("portfolios")
-    .select("id, t212_api_key")
+    .select("id, t212_api_key, t212_api_secret")
     .eq("source", "trading212")
     .not("t212_api_key", "is", null);
 
@@ -23,9 +23,10 @@ export async function GET(request: NextRequest) {
 
   for (const portfolio of portfolios) {
     try {
+      const secret = portfolio.t212_api_secret ?? undefined;
       const [positions] = await Promise.all([
-        getPortfolio(portfolio.t212_api_key!),
-        getCash(portfolio.t212_api_key!),
+        getPortfolio(portfolio.t212_api_key!, secret),
+        getCash(portfolio.t212_api_key!, secret),
       ]);
 
       const holdingsToUpsert = positions.map((pos) => ({
