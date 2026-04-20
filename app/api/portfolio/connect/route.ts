@@ -77,7 +77,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true, portfolioId: portfolio.id, totalValue: cash.invested + cash.free, count: positions.length });
   } catch (err) {
-    console.error("T212 sync error:", err);
-    return NextResponse.json({ ok: true, portfolioId: portfolio.id, syncError: true });
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error("T212 sync error:", msg);
+    return NextResponse.json({ ok: true, portfolioId: portfolio.id, syncError: true, syncErrorMsg: msg });
   }
 }

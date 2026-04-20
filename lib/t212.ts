@@ -44,7 +44,8 @@ async function t212Fetch<T>(apiKey: string, path: string, apiSecret?: string): P
 }
 
 export function validateKey(apiKey: string, apiSecret?: string) {
-  return t212Fetch<T212Cash>(apiKey, '/equity/account/cash', apiSecret)
+  // Use portfolio endpoint for validation — requires Account data permission
+  return t212Fetch<T212Position[]>(apiKey, '/equity/portfolio', apiSecret)
 }
 
 export function getPortfolio(apiKey: string, apiSecret?: string) {
