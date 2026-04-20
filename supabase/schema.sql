@@ -83,7 +83,8 @@ create table if not exists portfolios (
   name text not null,
   source text not null check (source in ('trading212', 'manual')),
   t212_api_key text,               -- stored server-side only, never sent to client
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  unique (user_id, source)
 );
 
 alter table portfolios enable row level security;
