@@ -8,13 +8,12 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
-  const { apiKey, apiSecret, name } = await request.json();
+  const { apiKey, name } = await request.json();
   if (!apiKey?.trim()) {
     return NextResponse.json({ error: "API key is required" }, { status: 400 });
   }
 
   const key = apiKey.trim();
-  const secret = apiSecret?.trim() || undefined;
 
   const admin = createAdminClient();
 
@@ -26,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   // Validate against T212 — pass through the real error so we can debug
   try {
-    await validateKey(key, secret);
+    await validateKey(key);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error"
     console.error("T212 validation failed:", msg)
@@ -41,7 +40,6 @@ export async function POST(request: NextRequest) {
         name: name || "My Trading 212 Portfolio",
         source: "trading212",
         t212_api_key: key,
-        t212_api_secret: secret ?? null,
       },
       { onConflict: "user_id,source" }
     )
@@ -55,8 +53,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const [positions, cash] = await Promise.all([
-      getPortfolio(key, secret),
-      getCash(key, secret),
+      getPortfolio(key),
+      getCash(key),
     ]);
 
     const holdingsToUpsert = positions.map((pos) => ({

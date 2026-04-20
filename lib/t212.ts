@@ -21,21 +21,16 @@ export interface T212Cash {
   pieCash: number
 }
 
-function authHeader(apiKey: string, apiSecret?: string): string {
-  if (apiSecret) {
-    // Basic auth: base64(key:secret)
-    const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')
-    return `Basic ${credentials}`
-  }
-  // Single key — T212 public API style
-  return apiKey
-}
-
-async function t212Fetch<T>(apiKey: string, path: string, apiSecret?: string): Promise<T> {
+async function t212Fetch<T>(apiKey: string, path: string, retries = 3): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { Authorization: authHeader(apiKey, apiSecret) },
+    headers: { Authorization: apiKey },
     next: { revalidate: 0 },
   })
+  if (res.status === 429 && retries > 0) {
+    const retryAfter = Number(res.headers.get('retry-after') ?? 5)
+    await new Promise((r) => setTimeout(r, retryAfter * 1000))
+    return t212Fetch<T>(apiKey, path, retries - 1)
+  }
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`T212 ${res.status}: ${text}`)
@@ -43,17 +38,16 @@ async function t212Fetch<T>(apiKey: string, path: string, apiSecret?: string): P
   return res.json()
 }
 
-export function validateKey(apiKey: string, apiSecret?: string) {
-  // Use portfolio endpoint for validation — requires Account data permission
-  return t212Fetch<T212Position[]>(apiKey, '/equity/portfolio', apiSecret)
+export function validateKey(apiKey: string) {
+  return t212Fetch<T212Position[]>(apiKey, '/equity/portfolio')
 }
 
-export function getPortfolio(apiKey: string, apiSecret?: string) {
-  return t212Fetch<T212Position[]>(apiKey, '/equity/portfolio', apiSecret)
+export function getPortfolio(apiKey: string) {
+  return t212Fetch<T212Position[]>(apiKey, '/equity/portfolio')
 }
 
-export function getCash(apiKey: string, apiSecret?: string) {
-  return t212Fetch<T212Cash>(apiKey, '/equity/account/cash', apiSecret)
+export function getCash(apiKey: string) {
+  return t212Fetch<T212Cash>(apiKey, '/equity/account/cash')
 }
 
 /** "VWRP_EQ" → "VWRP", "AAPL_US_EQ" → "AAPL" */
