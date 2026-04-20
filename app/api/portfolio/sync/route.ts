@@ -25,26 +25,32 @@ export async function POST(request: NextRequest) {
 
   const secret = portfolio.t212_api_secret ?? undefined;
 
-  const [positions, cash] = await Promise.all([
-    getPortfolio(portfolio.t212_api_key, secret),
-    getCash(portfolio.t212_api_key, secret),
-  ]);
+  try {
+    const [positions, cash] = await Promise.all([
+      getPortfolio(portfolio.t212_api_key, secret),
+      getCash(portfolio.t212_api_key, secret),
+    ]);
 
-  const holdingsToUpsert = positions.map((pos) => ({
-    portfolio_id: portfolio.id,
-    ticker: pos.ticker,
-    name: tickerDisplay(pos.ticker),
-    quantity: pos.quantity,
-    avg_buy_price: pos.averagePrice,
-    current_price: pos.currentPrice,
-    last_synced_at: new Date().toISOString(),
-  }));
+    const holdingsToUpsert = positions.map((pos) => ({
+      portfolio_id: portfolio.id,
+      ticker: pos.ticker,
+      name: tickerDisplay(pos.ticker),
+      quantity: pos.quantity,
+      avg_buy_price: pos.averagePrice,
+      current_price: pos.currentPrice,
+      last_synced_at: new Date().toISOString(),
+    }));
 
-  if (holdingsToUpsert.length > 0) {
-    await admin
-      .from("holdings")
-      .upsert(holdingsToUpsert, { onConflict: "portfolio_id,ticker" });
+    if (holdingsToUpsert.length > 0) {
+      await admin
+        .from("holdings")
+        .upsert(holdingsToUpsert, { onConflict: "portfolio_id,ticker" });
+    }
+
+    return NextResponse.json({ ok: true, cash, count: positions.length });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    console.error("Sync error:", msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, cash, count: positions.length });
 }
