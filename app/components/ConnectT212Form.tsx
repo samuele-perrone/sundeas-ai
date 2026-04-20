@@ -36,25 +36,51 @@ export default function ConnectT212Form() {
     <div className="flex flex-col gap-8 max-w-lg">
       {/* Instructions */}
       <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6">
-        <h2 className="mb-4 font-semibold text-[var(--foreground)]">
-          How to get your Trading 212 API key
+        <h2 className="mb-1 font-semibold text-[var(--foreground)]">
+          How to generate your Trading 212 API key
         </h2>
-        <ol className="flex flex-col gap-3 text-sm text-[var(--muted)]">
+        <p className="mb-5 text-sm text-[var(--muted)]">Takes about 2 minutes in the app.</p>
+        <ol className="flex flex-col gap-4 text-sm text-[var(--muted)]">
           <li className="flex gap-3">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-xs font-bold text-[var(--accent)]">1</span>
-            Open the Trading 212 app on your phone
+            Open the Trading 212 app and tap your <strong className="text-[var(--foreground)]">profile icon</strong> (bottom right)
           </li>
           <li className="flex gap-3">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-xs font-bold text-[var(--accent)]">2</span>
-            Tap your profile icon → <strong className="text-[var(--foreground)]">Settings</strong>
+            Go to <strong className="text-[var(--foreground)]">Settings → API (Beta)</strong>
           </li>
-          <li className="flex gap-3">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-xs font-bold text-[var(--accent)]">3</span>
-            Scroll to <strong className="text-[var(--foreground)]">API (Beta)</strong> and tap <strong className="text-[var(--foreground)]">Generate key</strong>
+          <li className="flex gap-3 flex-col">
+            <div className="flex gap-3">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-xs font-bold text-[var(--accent)]">3</span>
+              <span>Enable these permissions:</span>
+            </div>
+            <div className="ml-8 flex flex-col gap-2">
+              {[
+                { label: "Account data", required: true, reason: "Your portfolio holdings and cash balance" },
+                { label: "Metadata", required: true, reason: "Instrument names and details" },
+                { label: "History – Dividends", required: false, reason: "Optional — dividend history" },
+              ].map(({ label, required, reason }) => (
+                <div key={label} className="flex items-start gap-2.5">
+                  <span className={`mt-0.5 text-xs font-bold ${required ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>✓</span>
+                  <div>
+                    <span className="font-medium text-[var(--foreground)]">{label}</span>
+                    {required && <span className="ml-1.5 text-xs text-[var(--accent)]">required</span>}
+                    <p className="text-xs text-[var(--muted)]">{reason}</p>
+                  </div>
+                </div>
+              ))}
+              <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 text-xs font-bold text-red-400">✕</span>
+                <div>
+                  <span className="font-medium text-[var(--foreground)]">Orders – Execute</span>
+                  <p className="text-xs text-[var(--muted)]">Leave this OFF — Sundeas AI never places trades</p>
+                </div>
+              </div>
+            </div>
           </li>
           <li className="flex gap-3">
             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent)]/10 text-xs font-bold text-[var(--accent)]">4</span>
-            Copy the key and paste it below
+            Tap <strong className="text-[var(--foreground)]">Generate key</strong>, copy it, and paste it below
           </li>
         </ol>
       </div>
@@ -89,7 +115,7 @@ export default function ConnectT212Form() {
         </button>
 
         <p className="text-xs text-[var(--muted)]">
-          Read-only access only. Sundeas AI can never place trades or move money.
+          Read-only access only. Sundeas AI can never place trades or move money on your behalf.
         </p>
       </form>
     </div>
