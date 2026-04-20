@@ -16,6 +16,14 @@ export async function POST(request: NextRequest) {
   const key = apiKey.trim();
   const secret = apiSecret?.trim() || undefined;
 
+  const admin = createAdminClient();
+
+  // Ensure profile exists (users who signed up before schema was applied won't have one)
+  await admin.from("profiles").upsert(
+    { id: user.id, display_name: user.user_metadata?.full_name ?? null },
+    { onConflict: "id" }
+  );
+
   // Validate against T212 — pass through the real error so we can debug
   try {
     await validateKey(key, secret);
@@ -24,8 +32,6 @@ export async function POST(request: NextRequest) {
     console.error("T212 validation failed:", msg)
     return NextResponse.json({ error: `Could not connect to Trading 212: ${msg}` }, { status: 400 });
   }
-
-  const admin = createAdminClient();
 
   const { data: portfolio, error: portfolioError } = await admin
     .from("portfolios")
