@@ -34,6 +34,22 @@ export default async function PortfolioPage() {
     );
   }
 
+  const { data: latestInsight } = await supabase
+    .from("insights")
+    .select("market_context, generated_at")
+    .eq("portfolio_id", portfolio.id)
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  const insight = latestInsight?.market_context as {
+    marketContext: string;
+    assessment: string;
+    recommendation: string;
+    riskNote: string;
+    suggestions?: { title: string; reason: string }[];
+  } | null;
+
   const { data: holdings } = await supabase
     .from("holdings")
     .select("id, ticker, name, quantity, avg_buy_price, current_price, target_weight, last_synced_at")
@@ -172,6 +188,58 @@ export default async function PortfolioPage() {
       <p className="mt-6 text-xs text-[var(--muted)]">
         Prices are updated when you sync and may be delayed. Do not rely on them for trading decisions.
       </p>
+
+      {/* AI Insight */}
+      {insight && (
+        <div className="mt-8 flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-[var(--foreground)]">Today's briefing</h2>
+            {latestInsight?.generated_at && (
+              <span className="text-xs text-[var(--muted)]">
+                {new Date(latestInsight.generated_at).toLocaleString("en-GB", {
+                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                })}
+              </span>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Market context</p>
+              <p className="text-sm leading-relaxed text-[var(--foreground)]">{insight.marketContext}</p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Assessment</p>
+              <p className="text-sm leading-relaxed text-[var(--foreground)]">{insight.assessment}</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Today's suggestion</p>
+            <p className="text-sm leading-relaxed text-[var(--foreground)]">{insight.recommendation}</p>
+            <p className="mt-3 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted)]">
+              <span className="font-medium text-[var(--foreground)]">Risk note:</span> {insight.riskNote}
+            </p>
+          </div>
+
+          {insight.suggestions && insight.suggestions.length > 0 && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wide text-[var(--accent)]">Worth exploring</p>
+              <div className="flex flex-col gap-4">
+                {insight.suggestions.map((s, i) => (
+                  <div key={i} className={i > 0 ? "border-t border-[var(--border)] pt-4" : ""}>
+                    <p className="mb-1 text-sm font-semibold text-[var(--foreground)]">{s.title}</p>
+                    <p className="text-sm leading-relaxed text-[var(--muted)]">{s.reason}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 border-t border-[var(--border)] pt-3 text-xs text-[var(--muted)]">
+                Educational suggestions only — not buy recommendations.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

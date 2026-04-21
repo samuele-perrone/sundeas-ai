@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPortfolio, getCash, tickerDisplay } from "@/lib/t212";
-import { generateDailyInsight, type HoldingSummary } from "@/lib/insights";
+import { generateDailyInsight, saveInsight, type HoldingSummary } from "@/lib/insights";
 import { dailyDigestEmail } from "@/lib/emails/daily-digest";
 import { Resend } from "resend";
 import { NextRequest, NextResponse } from "next/server";
@@ -98,8 +98,9 @@ export async function GET(request: NextRequest) {
         };
       }).sort((a, b) => b.value - a.value);
 
-      // Generate AI insight
+      // Generate AI insight and persist it
       const insight = await generateDailyInsight(holdingSummaries, totalValue);
+      await saveInsight(portfolio.id, insight);
 
       // Resolve user email via admin auth API
       const { data: { user: authUser } } = await admin.auth.admin.getUserById(portfolio.user_id);

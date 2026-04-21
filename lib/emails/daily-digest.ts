@@ -95,6 +95,21 @@ export function dailyDigestEmail({
           </p>
         </td></tr>
 
+        <!-- Spacer -->
+        <tr><td style="height:12px;"></td></tr>
+
+        <!-- Investment suggestions -->
+        ${insight.suggestions?.length ? `
+        <tr><td style="background:#fff;border:1px solid #fde4cc;border-radius:16px;padding:24px 28px;">
+          <p style="margin:0 0 16px;font-size:11px;font-weight:700;color:#e8611a;text-transform:uppercase;letter-spacing:.08em;">Worth exploring</p>
+          ${insight.suggestions.map((s) => `
+          <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #fde4cc;">
+            <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#1c0f08;">${s.title}</p>
+            <p style="margin:0;font-size:13px;line-height:1.6;color:#9a6e58;">${s.reason}</p>
+          </div>`).join("")}
+          <p style="margin:0;font-size:11px;color:#9a6e58;">These are educational suggestions only, not buy recommendations.</p>
+        </td></tr>` : ""}
+
         <!-- CTA -->
         <tr><td style="padding-top:24px;text-align:center;">
           <a href="${appUrl}/portfolio"

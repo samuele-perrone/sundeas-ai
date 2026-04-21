@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { generateDailyInsight, type HoldingSummary } from "@/lib/insights";
+import { generateDailyInsight, saveInsight, type HoldingSummary } from "@/lib/insights";
 import { dailyDigestEmail } from "@/lib/emails/daily-digest";
 import { tickerDisplay } from "@/lib/t212";
 import { Resend } from "resend";
@@ -65,6 +65,7 @@ export async function POST() {
   let insight;
   try {
     insight = await generateDailyInsight(holdingSummaries, totalValue);
+    await saveInsight(portfolio.id, insight);
   } catch (err) {
     return NextResponse.json({ error: "Claude failed", detail: String(err) }, { status: 500 });
   }
