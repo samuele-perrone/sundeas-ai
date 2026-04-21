@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   const { data: portfolio } = await admin
     .from("portfolios")
-    .select("id, t212_api_key")
+    .select("id, t212_api_key, t212_api_secret")
     .eq("id", portfolioId)
     .eq("user_id", user.id)
     .single();
@@ -23,10 +23,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
   }
 
+  const secret = portfolio.t212_api_secret ?? undefined;
+
   try {
     const [positions, cash] = await Promise.all([
-      getPortfolio(portfolio.t212_api_key),
-      getCash(portfolio.t212_api_key),
+      getPortfolio(portfolio.t212_api_key, secret),
+      getCash(portfolio.t212_api_key, secret),
     ]);
 
     const holdingsToUpsert = positions.map((pos) => ({
