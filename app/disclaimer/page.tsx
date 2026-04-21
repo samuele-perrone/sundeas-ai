@@ -73,8 +73,8 @@ export default function DisclaimerPage() {
 
         <div className="mt-12 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 text-sm leading-relaxed text-[var(--muted)]">
           If you have any questions about this disclaimer, please contact us at{" "}
-          <a href="mailto:hello@sundeas.com" className="text-[var(--accent)] hover:underline">
-            hello@sundeas.com
+          <a href="mailto:samuele.perrone@gmail.com" className="text-[var(--accent)] hover:underline">
+            samuele.perrone@gmail.com
           </a>.
         </div>
       </main>
