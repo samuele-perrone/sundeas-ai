@@ -49,7 +49,7 @@ Respond with a JSON object with exactly these four fields:
 Important: frame everything as educational information, not personal financial advice. Do not say "you should" — use "it may be worth considering" or "historically" or similar educational language. Be concise.`;
 
   const message = await anthropic.messages.create({
-    model: "claude-opus-4-6",
+    model: "claude-haiku-4-5-20251001",
     max_tokens: 600,
     messages: [{ role: "user", content: prompt }],
   });
