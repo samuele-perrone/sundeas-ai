@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import SignOutButton from "@/app/components/SignOutButton";
+import AppFooter from "@/app/components/AppFooter";
 import Link from "next/link";
 
 const NAV = [
@@ -47,6 +48,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="flex flex-1 flex-col">
         {children}
       </main>
+
+      <AppFooter />
     </div>
   );
 }

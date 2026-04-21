@@ -105,9 +105,13 @@ export function dailyDigestEmail({
 
         <!-- Disclaimer -->
         <tr><td style="padding-top:24px;text-align:center;">
-          <p style="font-size:11px;color:#9a6e58;margin:0;line-height:1.6;">
-            This is not financial advice. Past performance is not a guarantee of future results.<br>
-            Sundeas AI provides educational information only.
+          <p style="font-size:11px;color:#9a6e58;margin:0;line-height:1.8;">
+            Sundeas AI provides educational information only. Nothing in this email constitutes
+            financial advice, a recommendation to buy or sell, or personalised investment guidance.
+            AI-generated insights may be incorrect and are not reviewed by a financial professional.
+            Prices may be delayed or inaccurate. Past performance is not a guarantee of future results.
+            You are solely responsible for your investment decisions.<br>
+            <a href="${appUrl}/disclaimer" style="color:#9a6e58;">Full disclaimer</a>
           </p>
         </td></tr>
 

@@ -170,7 +170,7 @@ export default async function PortfolioPage() {
       )}
 
       <p className="mt-6 text-xs text-[var(--muted)]">
-        Prices are updated when you sync. This is not financial advice.
+        Prices are updated when you sync and may be delayed. Do not rely on them for trading decisions.
       </p>
     </div>
   );

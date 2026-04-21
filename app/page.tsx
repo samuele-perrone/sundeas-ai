@@ -1,3 +1,4 @@
+import Link from "next/link";
 import WaitlistForm from "@/app/components/WaitlistForm";
 
 const steps = [
@@ -226,8 +227,10 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-[var(--border)] bg-[var(--surface)]">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6 text-xs text-[var(--muted)]">
-          <span>© 2025 Sundeas AI</span>
-          <span>Not financial advice</span>
+          <span>© 2026 Sundeas AI</span>
+          <Link href="/disclaimer" className="hover:text-[var(--foreground)] underline">
+            Disclaimer — not financial advice
+          </Link>
         </div>
       </footer>
     </div>
