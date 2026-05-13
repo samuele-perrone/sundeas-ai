@@ -99,17 +99,28 @@ export async function GET(request: NextRequest) {
       }).sort((a, b) => b.value - a.value);
 
       // Generate AI insight and persist it
-      const insight = await generateDailyInsight(holdingSummaries, totalValue);
+      const todayDate = new Date().toISOString();
+      const insight = await generateDailyInsight(holdingSummaries, totalValue, "GBP", todayDate);
       await saveInsight(portfolio.id, insight);
 
       // Resolve user email via admin auth API
       const { data: { user: authUser } } = await admin.auth.admin.getUserById(portfolio.user_id);
       const userEmail = authUser?.email;
       if (userEmail) {
+        const focusLabels: Record<number, string> = {
+          0: "Long-term perspective",
+          1: "Week ahead",
+          2: "Holding deep-dive",
+          3: "Risk & concentration",
+          4: "Diversification gaps",
+          5: "Weekly wrap",
+          6: "Investing concepts",
+        };
+        const dayFocus = focusLabels[new Date().getDay()];
         await resend.emails.send({
           from: FROM,
           to: userEmail,
-          subject: `Your portfolio briefing — ${date}`,
+          subject: `${dayFocus} — ${date}`,
           html: dailyDigestEmail({
             portfolioName: portfolio.name,
             totalValue,
@@ -118,6 +129,7 @@ export async function GET(request: NextRequest) {
             insight,
             appUrl: APP_URL,
             date,
+            focusLabel: dayFocus,
           }),
         });
       }

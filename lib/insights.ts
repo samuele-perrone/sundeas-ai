@@ -26,11 +26,48 @@ export interface PortfolioInsight {
   }[];
 }
 
+const DAILY_FOCUS: Record<number, { label: string; instruction: string }> = {
+  0: {
+    label: "Long-term perspective",
+    instruction: `Zoom out to the long term. For marketContext, explain what long-term historical data says about the asset classes in this portfolio — average annual returns, drawdown recovery times, inflation-adjusted performance. For assessment, reflect on how this portfolio is positioned for a 10–20 year horizon. For recommendation, give one thought on how a long-term investor in this position might think about their next move. For suggestions, focus on assets that have historically complemented this type of portfolio over long periods.`,
+  },
+  1: {
+    label: "Week ahead",
+    instruction: `Focus on what's happening in markets this week. For marketContext, identify any notable economic data releases, central bank decisions, or earnings reports this week that are relevant to the sectors or asset classes in this portfolio. For assessment, explain how these events might affect the holdings. For recommendation, give one piece of educational context about how investors typically position around these kinds of events. For suggestions, focus on defensive or counter-cyclical assets relevant to the upcoming week.`,
+  },
+  2: {
+    label: "Holding deep-dive",
+    instruction: `Pick the largest holding and explain it in depth. For marketContext, describe what index or strategy this ETF tracks, which sectors dominate it, approximate ongoing charge (if known), and how it's performed in recent years. For assessment, explain what this one holding's dominance means for the portfolio's overall exposure — sectors, geographies, currencies. For recommendation, give one educational thought on concentration in a single fund. For suggestions, focus on what this holding lacks (e.g. missing sectors, geographies, or bond exposure).`,
+  },
+  3: {
+    label: "Risk & concentration",
+    instruction: `Focus entirely on risk. For marketContext, explain the main macro risks currently facing the sectors and geographies in this portfolio. For assessment, analyse concentration risk: how correlated are the holdings, what happens if UK equities drop 30%, and are there hidden overlaps between funds. For recommendation, give one educational thought on how investors historically manage concentration risk. For suggestions, focus on uncorrelated assets or strategies that have historically provided ballast in equity downturns.`,
+  },
+  4: {
+    label: "Diversification gaps",
+    instruction: `Focus on what's missing. For marketContext, briefly note how global equity markets (US, emerging markets, Asia) have performed relative to UK equities recently. For assessment, explain which asset classes, geographies, or sectors are entirely absent from this portfolio and what exposure that means the investor lacks. For recommendation, give one educational thought on why geographic diversification has historically mattered. For suggestions, be specific about the exact gaps (e.g. US equities, bonds, commodities, small-cap) and why each one is educationally worth understanding.`,
+  },
+  5: {
+    label: "Weekly wrap",
+    instruction: `Wrap up the week. For marketContext, summarise what happened in markets this week that is relevant to these holdings — any notable moves in UK equities, interest rate news, or sector rotation. For assessment, reflect on how the portfolio would have fared this week and why. For recommendation, give one educational thought about what to watch going into the weekend or next week. For suggestions, focus on any opportunities or risks that the week's events have highlighted for this type of portfolio.`,
+  },
+  6: {
+    label: "Investing concepts",
+    instruction: `Teach something useful. Pick one investing concept directly relevant to this portfolio — e.g. pound-cost averaging, rebalancing, the equity risk premium, home bias, or sequence-of-returns risk. For marketContext, introduce the concept and why it applies here. For assessment, explain how this portfolio illustrates or is affected by this concept. For recommendation, give one educational thought on how understanding this concept might change how the investor thinks about their portfolio. For suggestions, focus on tools or approaches related to this concept (e.g. if covering home bias, suggest global diversifiers).`,
+  },
+};
+
 export async function generateDailyInsight(
   holdings: HoldingSummary[],
   totalValue: number,
-  currency = "GBP"
+  currency = "GBP",
+  date?: string
 ): Promise<PortfolioInsight> {
+  const today = date ? new Date(date) : new Date();
+  const dayOfWeek = today.getDay();
+  const focus = DAILY_FOCUS[dayOfWeek];
+  const dateStr = today.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+
   const holdingsList = holdings
     .map(
       (h) =>
@@ -40,19 +77,22 @@ export async function generateDailyInsight(
     )
     .join("\n");
 
-  const prompt = `You are an investment education assistant. A user's portfolio has just been synced. Provide a short, plain-English daily briefing to help them understand their portfolio in the context of current market conditions.
+  const prompt = `You are an investment education assistant. Today is ${dateStr}.
 
 Portfolio (total value: ${currency} ${totalValue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}):
 ${holdingsList}
 
-Respond with a JSON object with exactly these five fields:
-- "marketContext": 2-3 sentences on current market trends relevant to these specific holdings (indices, sectors, or asset classes represented). Be specific to their tickers.
-- "assessment": 2-3 sentences on whether their current allocation looks reasonable given market conditions, and whether any holding has drifted significantly from a sensible weighting.
-- "recommendation": 1-2 sentences — a single clear, actionable educational suggestion (e.g. "Consider holding and continuing regular contributions" or "Your tech allocation has grown to X% — it may be worth reviewing your target weighting").
-- "riskNote": 1 sentence on the main concentration or risk factor in this portfolio.
-- "suggestions": an array of 2-3 objects, each with "title" (name of an ETF, asset class, or sector worth exploring) and "reason" (1-2 sentences explaining what gap in this portfolio it could address and why it's educationally relevant to consider — not a buy recommendation).
+TODAY'S FOCUS: ${focus.label}
+${focus.instruction}
 
-Important: frame everything as educational information, not personal financial advice. Do not say "you should" — use "it may be worth considering" or "historically" or similar educational language. For suggestions, focus on diversification gaps, missing asset classes, or geographic concentration. Be concise.`;
+Respond with a JSON object with exactly these five fields:
+- "marketContext": 2-3 sentences — follow the focus instructions above.
+- "assessment": 2-3 sentences — follow the focus instructions above.
+- "recommendation": 1-2 sentences — follow the focus instructions above.
+- "riskNote": 1 sentence on the single most relevant risk given today's focus angle.
+- "suggestions": an array of 2-3 objects, each with "title" (ETF, asset class, or concept to explore) and "reason" (1-2 sentences — follow the focus instructions above).
+
+Important: frame everything as educational information, not personal financial advice. Do not say "you should" — use "it may be worth considering", "historically", "educational context" or similar language. Be specific and concrete — avoid generic statements that would apply to any portfolio. Make the content genuinely different from a generic daily briefing.`;
 
   const message = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",

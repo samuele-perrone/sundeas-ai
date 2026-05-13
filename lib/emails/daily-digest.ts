@@ -8,6 +8,7 @@ export function dailyDigestEmail({
   insight,
   appUrl,
   date,
+  focusLabel,
 }: {
   portfolioName: string;
   totalValue: number;
@@ -16,6 +17,7 @@ export function dailyDigestEmail({
   insight: PortfolioInsight;
   appUrl: string;
   date: string;
+  focusLabel?: string;
 }) {
   const pnlSign = totalPnl >= 0 ? "+" : "";
   const pnlColour = totalPnl >= 0 ? "#059669" : "#dc2626";
@@ -46,6 +48,7 @@ export function dailyDigestEmail({
             Sundeas<span style="color:#e8611a;">.</span>AI
           </span>
           <span style="font-size:13px;color:#9a6e58;margin-left:10px;">${date}</span>
+          ${focusLabel ? `<br><span style="display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:#e8611a;text-transform:uppercase;letter-spacing:.08em;">Today: ${focusLabel}</span>` : ""}
         </td></tr>
 
         <!-- Portfolio summary card -->
