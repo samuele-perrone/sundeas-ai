@@ -19,6 +19,16 @@ export default async function DashboardPage() {
       .eq("user_id", user!.id),
   ]);
 
+  const { data: latestInsight } = portfolio
+    ? await supabase
+        .from("insights")
+        .select("generated_at")
+        .eq("portfolio_id", portfolio.id)
+        .order("generated_at", { ascending: false })
+        .limit(1)
+        .single()
+    : { data: null };
+
   const name = user!.user_metadata?.full_name?.split(" ")[0] ?? "there";
 
   return (
@@ -49,6 +59,14 @@ export default async function DashboardPage() {
                 ? `${portfolio.name} — tap to view your holdings`
                 : "Connect your Trading 212 account to get started"}
             </p>
+            {latestInsight?.generated_at && (
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                Last briefing:{" "}
+                {new Date(latestInsight.generated_at).toLocaleString("en-GB", {
+                  day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+                })}
+              </p>
+            )}
           </div>
           <span className="text-sm font-medium text-[var(--accent)] group-hover:underline">
             {portfolio ? "View portfolio →" : "Connect now →"}
