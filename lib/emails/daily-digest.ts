@@ -1,4 +1,4 @@
-import type { HoldingSummary, PortfolioInsight } from "@/lib/insights";
+import type { HoldingSummary, PortfolioInsight, HoldingSignal } from "@/lib/insights";
 
 export function dailyDigestEmail({
   portfolioName,
@@ -22,15 +22,35 @@ export function dailyDigestEmail({
   const pnlSign = totalPnl >= 0 ? "+" : "";
   const pnlColour = totalPnl >= 0 ? "#059669" : "#dc2626";
 
+  const signalMap = new Map<string, HoldingSignal>(
+    (insight.holdingSignals ?? []).map((s) => [s.ticker, s])
+  );
+
+  const SIGNAL_STYLE: Record<string, { bg: string; color: string }> = {
+    BUY:  { bg: "#d1fae5", color: "#065f46" },
+    SELL: { bg: "#fee2e2", color: "#991b1b" },
+    HOLD: { bg: "#fef3c7", color: "#92400e" },
+  };
+
   const holdingRows = holdings
     .map((h) => {
       const pnlColour = h.pnlPct >= 0 ? "#059669" : "#dc2626";
+      const sig = signalMap.get(h.ticker);
+      const sigStyle = sig ? SIGNAL_STYLE[sig.verdict] : null;
+      const signalBadge = sig && sigStyle
+        ? `<span style="display:inline-block;margin-left:6px;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;background:${sigStyle.bg};color:${sigStyle.color};">${sig.verdict}</span>`
+        : "";
+      const rationaleRow = sig
+        ? `<tr style="border-bottom:1px solid #fde4cc;">
+            <td colspan="3" style="padding:0 0 8px;font-size:11px;color:#9a6e58;font-style:italic;">${sig.rationale}</td>
+           </tr>`
+        : "";
       return `
-      <tr style="border-bottom:1px solid #fde4cc;">
-        <td style="padding:10px 0;font-size:13px;color:#1c0f08;font-weight:600;">${h.name}</td>
-        <td style="padding:10px 0;font-size:13px;color:#9a6e58;text-align:right;">${h.allocationPct.toFixed(1)}%</td>
-        <td style="padding:10px 0;font-size:13px;color:${pnlColour};text-align:right;">${h.pnlPct >= 0 ? "+" : ""}${h.pnlPct.toFixed(1)}%</td>
-      </tr>`;
+      <tr style="border-bottom:${sig ? "none" : "1px solid #fde4cc"};">
+        <td style="padding:10px 0 ${sig ? "2px" : "10px"};font-size:13px;color:#1c0f08;font-weight:600;">${h.name}${signalBadge}</td>
+        <td style="padding:10px 0 ${sig ? "2px" : "10px"};font-size:13px;color:#9a6e58;text-align:right;">${h.allocationPct.toFixed(1)}%</td>
+        <td style="padding:10px 0 ${sig ? "2px" : "10px"};font-size:13px;color:${pnlColour};text-align:right;">${h.pnlPct >= 0 ? "+" : ""}${h.pnlPct.toFixed(1)}%</td>
+      </tr>${rationaleRow}`;
     })
     .join("");
 

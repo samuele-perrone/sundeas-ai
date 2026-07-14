@@ -15,6 +15,12 @@ export interface HoldingSummary {
   targetWeight?: number | null;
 }
 
+export interface HoldingSignal {
+  ticker: string;
+  verdict: 'BUY' | 'SELL' | 'HOLD';
+  rationale: string; // one short phrase, max 10 words
+}
+
 export interface PortfolioInsight {
   marketContext: string;   // what's happening in markets relevant to holdings
   assessment: string;      // hold vs rebalance — plain English
@@ -24,6 +30,7 @@ export interface PortfolioInsight {
     title: string;
     reason: string;
   }[];
+  holdingSignals: HoldingSignal[]; // per-holding educational signal
 }
 
 const DAILY_FOCUS: Record<number, { label: string; instruction: string }> = {
@@ -85,12 +92,16 @@ ${holdingsList}
 TODAY'S FOCUS: ${focus.label}
 ${focus.instruction}
 
-Respond with a JSON object with exactly these five fields:
+Respond with a JSON object with exactly these six fields:
 - "marketContext": 2-3 sentences — follow the focus instructions above.
 - "assessment": 2-3 sentences — follow the focus instructions above.
 - "recommendation": 1-2 sentences — follow the focus instructions above.
 - "riskNote": 1 sentence on the single most relevant risk given today's focus angle.
 - "suggestions": an array of 2-3 objects, each with "title" (ETF, asset class, or concept to explore) and "reason" (1-2 sentences — follow the focus instructions above).
+- "holdingSignals": an array with one entry per holding in the portfolio, each with:
+  - "ticker": the holding's ticker exactly as provided
+  - "verdict": one of "BUY" (adding more may be worth considering given current conditions), "SELL" (reducing may be worth considering), or "HOLD" (maintain current position)
+  - "rationale": one short phrase of max 10 words explaining the signal (e.g. "strong momentum, consider topping up" or "overweight relative to target")
 
 Important: frame everything as educational information, not personal financial advice. Do not say "you should" — use "it may be worth considering", "historically", "educational context" or similar language. Be specific and concrete — avoid generic statements that would apply to any portfolio. Make the content genuinely different from a generic daily briefing.`;
 
@@ -105,7 +116,9 @@ Important: frame everything as educational information, not personal financial a
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Claude did not return valid JSON");
 
-  return JSON.parse(jsonMatch[0]) as PortfolioInsight;
+  const parsed = JSON.parse(jsonMatch[0]) as PortfolioInsight;
+  if (!parsed.holdingSignals) parsed.holdingSignals = [];
+  return parsed;
 }
 
 export async function saveInsight(portfolioId: string, insight: PortfolioInsight) {
