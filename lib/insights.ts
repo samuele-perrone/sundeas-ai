@@ -84,7 +84,7 @@ export async function generateDailyInsight(
     )
     .join("\n");
 
-  const prompt = `You are an investment education assistant. Today is ${dateStr}.
+  const insightPrompt = `You are an investment education assistant. Today is ${dateStr}.
 
 Portfolio (total value: ${currency} ${totalValue.toLocaleString("en-GB", { minimumFractionDigits: 2 })}):
 ${holdingsList}
@@ -92,32 +92,52 @@ ${holdingsList}
 TODAY'S FOCUS: ${focus.label}
 ${focus.instruction}
 
-Respond with a JSON object with exactly these six fields:
+Respond with a JSON object with exactly these five fields:
 - "marketContext": 2-3 sentences — follow the focus instructions above.
 - "assessment": 2-3 sentences — follow the focus instructions above.
 - "recommendation": 1-2 sentences — follow the focus instructions above.
 - "riskNote": 1 sentence on the single most relevant risk given today's focus angle.
 - "suggestions": an array of 2-3 objects, each with "title" (ETF, asset class, or concept to explore) and "reason" (1-2 sentences — follow the focus instructions above).
-- "holdingSignals": an array with one entry per holding in the portfolio, each with:
-  - "ticker": the holding's ticker exactly as provided
-  - "verdict": one of "BUY" (adding more may be worth considering given current conditions), "SELL" (reducing may be worth considering), or "HOLD" (maintain current position)
-  - "rationale": one short phrase of max 10 words explaining the signal (e.g. "strong momentum, consider topping up" or "overweight relative to target")
 
 Important: frame everything as educational information, not personal financial advice. Do not say "you should" — use "it may be worth considering", "historically", "educational context" or similar language. Be specific and concrete — avoid generic statements that would apply to any portfolio. Make the content genuinely different from a generic daily briefing.`;
 
-  const message = await anthropic.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 800,
-    messages: [{ role: "user", content: prompt }],
-  });
+  const signalsPrompt = `For each holding below, give an educational signal based on current conditions and portfolio allocation. Reply with ONLY a valid JSON array — no other text.
 
-  const text = message.content[0].type === "text" ? message.content[0].text : "";
+Holdings:
+${holdingsList}
 
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Claude did not return valid JSON");
+Each item: {"ticker":"<exact ticker>","verdict":"BUY"|"SELL"|"HOLD","rationale":"<max 8 words, no quotes>"}
+
+Example: [{"ticker":"VWRP_EQ","verdict":"HOLD","rationale":"well diversified core holding"},{"ticker":"AAPL_US_EQ","verdict":"BUY","rationale":"strong momentum and reasonable valuation"}]`;
+
+  const [insightMsg, signalsMsg] = await Promise.all([
+    anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 800,
+      messages: [{ role: "user", content: insightPrompt }],
+    }),
+    anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 600,
+      messages: [{ role: "user", content: signalsPrompt }],
+    }),
+  ]);
+
+  const insightText = insightMsg.content[0].type === "text" ? insightMsg.content[0].text : "";
+  const signalsText = signalsMsg.content[0].type === "text" ? signalsMsg.content[0].text : "";
+
+  const jsonMatch = insightText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Claude did not return valid JSON for insight");
 
   const parsed = JSON.parse(jsonMatch[0]) as PortfolioInsight;
-  if (!parsed.holdingSignals) parsed.holdingSignals = [];
+
+  try {
+    const arrMatch = signalsText.match(/\[[\s\S]*\]/);
+    parsed.holdingSignals = arrMatch ? JSON.parse(arrMatch[0]) : [];
+  } catch {
+    parsed.holdingSignals = [];
+  }
+
   return parsed;
 }
 
